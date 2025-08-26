@@ -7,4 +7,5 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://app:app@db:5432/
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-class Base(DeclarativeBase): ...
+class Base(DeclarativeBase):
+    pass
