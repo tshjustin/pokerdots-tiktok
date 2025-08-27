@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function ProfileVideosTab() {
+export default function AddPage() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Profile — Videos</Text>
+      <Text>Add Video Content</Text>
     </View>
   );
 }
