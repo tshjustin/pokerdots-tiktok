@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY ./requirements.txt /app/.
-RUN pip install -r requirements.txt
+RUN pip install --default-timeout=100 --retries=5 -r requirements.txt
 
 # Return to app directory and copy source code
 COPY . /app

@@ -1,7 +1,10 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
-from db import Base
+from sqlalchemy.ext.declarative import declarative_base
+# from db import Base
 import enum
+
+Base = declarative_base()
 
 class AppreciationSource(str, enum.Enum):
     tap = "tap"
@@ -28,7 +31,7 @@ class Video(Base):
     duration_s = Column(Integer)
     ai_score = Column(Float, default=0.0)
     ai_label = Column(String)
-    metadata = Column(JSON)
+    meta_data = Column(JSON)
 
 class Appreciation(Base):
     __tablename__ = "appreciations"
