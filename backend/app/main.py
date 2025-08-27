@@ -24,6 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Only import routes after "app" has been initialised
+from .routes.health import router as health_router
+
+# Include routers
+app.include_router(health_router)
+
 # Application startup event
 @app.on_event("startup")
 def startup_event():
