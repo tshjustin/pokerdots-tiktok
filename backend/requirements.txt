@@ -7,3 +7,4 @@ pydantic
 python-jose[cryptography]
 passlib[bcrypt]
 redis
+python-dotenv==1.0.1

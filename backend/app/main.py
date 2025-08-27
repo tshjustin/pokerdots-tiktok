@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-# from db import get_db, Base, engine
-from .models import User, Video, Appreciation, TokenWallet #, AdSession
+# from ..database.models import User, Video, Appreciation, TokenWallet #, AdSession
 # from schemas import SignUp, Login, AppreciateIn, AdStartIn, AdCompleteIn
 # from security import create_access_token, get_current_user
 # from utils import ip_hash, rate_limit_ok
 import logging
+from database.db import create_database, create_tables
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
@@ -23,12 +24,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base.metadata.create_all(bind=engine)
-
 # Application startup event
 @app.on_event("startup")
 def startup_event():
-    logging.info("Application is starting up.")
+    logging.info("Application is starting up...")
+    # Create DB
+    create_database()
+    logging.info("Database successfully created.")
+    # Create DB Tables
+    create_tables()
+    logging.info("Tables successfully created.")
 
 @app.on_event("shutdown")
 def shutdown_event():

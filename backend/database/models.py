@@ -26,7 +26,7 @@ class TokenWallet(Base):
 class Video(Base):
     __tablename__ = "videos"
     id = Column(Integer, primary_key=True)
-    creator_id = Column(Integer, ForeignKey("creators.id"))
+    creator_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String)
     duration_s = Column(Integer)
     ai_score = Column(Float, default=0.0)
