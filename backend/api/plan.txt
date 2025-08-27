@@ -1,0 +1,12 @@
+your-project/
+  docker-compose.yml
+  api/
+    Dockerfile
+    requirements.txt
+    main.py
+    models.py
+    db.py
+    schemas.py
+    security.py
+    utils.py
+
