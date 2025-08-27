@@ -1,13 +1,40 @@
 from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from db import get_db, Base, engine
 from models import User, Video, Appreciation, TokenWallet, AdSession
 from schemas import SignUp, Login, AppreciateIn, AdStartIn, AdCompleteIn
 from security import create_access_token, get_current_user
 from utils import ip_hash, rate_limit_ok
+import logging
+
+
 
 app = FastAPI()
+
+origins = [
+    "*"
+]
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to the specific origins you want to allow
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 Base.metadata.create_all(bind=engine)
+
+# Application startup event
+@app.on_event("startup")
+def startup_event():
+    logging.info("Application is starting up.")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    logging.info("Application is shutting down.")
 
 @app.post("/auth/signup")
 def signup(data: SignUp, db: Session = Depends(get_db)):
