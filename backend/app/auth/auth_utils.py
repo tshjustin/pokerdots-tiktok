@@ -31,6 +31,9 @@ def create_access_token(user: User):
     return encoded_jwt
 
 def authenticate_user(username: str, password: str, db: Session):
+    """
+    Authenticate users by checking if the username and password hash matches a record in the database
+    """
     try:
         # Check if account with username exists
         user = db.query(User).filter(User.username == username).first()
@@ -45,5 +48,5 @@ def authenticate_user(username: str, password: str, db: Session):
     
     except Exception as e:
         logger.error(f"An error has occurred while authenticating user: {str(e)}")
-        # raise RuntimeError
+        raise
 

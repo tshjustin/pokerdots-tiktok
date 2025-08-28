@@ -47,15 +47,6 @@ def startup_event():
 def shutdown_event():
     logging.info("Application is shutting down.")
 
-# @app.post("/auth/signup")
-# def signup(data: SignUp, db: Session = Depends(get_db)):
-#     # create user + wallet
-#     ...
-
-# @app.post("/auth/login")
-# def login(data: Login, db: Session = Depends(get_db)):
-#     ...
-
 # @app.get("/tokens/balance")
 # def balance(user=Depends(get_current_user), db: Session = Depends(get_db)):
 #     # return monthly_budget + bonus_balance

@@ -3,10 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
-from datetime import timedelta
 import logging
 from database.models import User
-from database.session import SessionLocal
+from database.session import get_db
 from .auth_utils import authenticate_user, create_access_token
 from .schemas import CreateUserRequest, Token
 
@@ -19,13 +18,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(
@@ -44,7 +36,7 @@ async def create_user(
 
     except IntegrityError as ie:
         db.rollback()
-        error_info = str(e.orig).lower()
+        error_info = str(ie.orig).lower()
         if "email" in error_info:
             logger.error("Email address is already registered!")
             raise HTTPException(
