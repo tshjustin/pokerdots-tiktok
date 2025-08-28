@@ -26,9 +26,11 @@ app.add_middleware(
 
 # Only import routes after "app" has been initialised
 from .routes.health import router as health_router
+from .auth.auth_router import router as auth_router
 
 # Include routers
 app.include_router(health_router)
+app.include_router(auth_router)
 
 # Application startup event
 @app.on_event("startup")
