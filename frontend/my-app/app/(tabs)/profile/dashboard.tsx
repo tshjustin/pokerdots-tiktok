@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 import MetricCard from '../../../src/components/MetricCard';
+import InfoModal from '../../../src/components/InfoModal';
 import { fetchDashboardMetrics, Metric } from '../../../src/services/dashboardService';
-import { Alert } from 'react-native';
 
 export default function ProfileDashboardTab() {
   const [metrics, setMetrics] = useState<Metric[] | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardMetrics('current-user-id').then(setMetrics);
@@ -29,26 +30,28 @@ export default function ProfileDashboardTab() {
         keyExtractor={(m) => m.id}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
-        renderItem={({ item }) => (
+        contentContainerStyle={{ paddingTop: 4 }}
+        renderItem={({ item, index }) => (
           <MetricCard
             title={item.title}
             value={item.value}
             subvalue={item.subvalue}
             backgroundColor={item.backgroundColor}
             textColor={item.textColor}
-            showInfo={item.showInfo}
-            onPressInfo={() => {
-              if (item.id === 'appreciation') {
-                Alert.alert(
-                  'Appreciation Value',
-                  'This represents the total value of tokens you received this year.'
-                );
-              }
-            }}
+            // show info icon only for the Appreciation card (id === 'appreciation'),
+            // or make this configurable from the service.
+            showInfo={item.id === 'appreciation'}
+            onPressInfo={() => setInfoOpen(true)}
           />
         )}
-        contentContainerStyle={{ paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
+      />
+
+      <InfoModal
+        visible={infoOpen}
+        title="Appreciation Value"
+        message="This represents the total value of tokens you received this year."
+        onClose={() => setInfoOpen(false)}
       />
     </View>
   );
