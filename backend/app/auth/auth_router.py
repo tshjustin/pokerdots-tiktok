@@ -6,10 +6,10 @@ from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 import logging
 
-from database.models import User
+from database.models import User, TokenWallet
 from database.session import get_db
 from .auth_utils import authenticate_user, create_access_token
-from .schemas import CreateUserRequest, Token
+from .schemas import CreateUserRequest, Token, Message, ErrorResponse
 
 # ---------- logging ----------
 logging.basicConfig(level=logging.INFO)
@@ -22,17 +22,7 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # IMPORTANT: make this the absolute path to match your route
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-# Optional: small response models for nicer Swagger
-from pydantic import BaseModel, Field
-
-class Message(BaseModel):
-    message: str = Field(..., example="User created")
-
-class ErrorResponse(BaseModel):
-    detail: str = Field(..., example="Username is already taken")
-
 # ---------- endpoints ----------
-
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
@@ -51,12 +41,18 @@ async def create_user(
     db: Session = Depends(get_db),
 ):
     try:
+        # First, create user account to get user ID
         new_user = User(
             username=request.username,
             email=request.email,
             password_hash=bcrypt_context.hash(request.password),
         )
         db.add(new_user)
+        db.flush() 
+        # Then create wallet with the user ID
+        new_wallet = TokenWallet(user_id = new_user.id)
+        db.add(new_wallet)
+        # Commit both wallet and user
         db.commit()
         # Return a concrete body so Swagger shows it
         return {"message": "User created"}
@@ -104,8 +100,9 @@ async def login(
         token = create_access_token(user)
         return {"access_token": token, "token_type": "bearer"}
 
-    except HTTPException:
-        raise
+    except HTTPException as he:
+        raise he
+    
     except Exception as e:
         logger.error(f"Auth error: {e}")
         raise HTTPException(status_code=500, detail=f"An error has occurred: {e}")

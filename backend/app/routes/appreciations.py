@@ -7,38 +7,20 @@ from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
 
 from database.session import get_db
-from database import models
-from ..appreciations.schemas import AppreciateIn, AppreciateOut, ErrorResponse  
+from database.models import User, Video, TokenWallet, AppreciationToken
+from ..appreciations.schemas import AppreciateIn, AppreciateOut, ErrorResponse
+from ..auth.auth_utils import get_current_user  
 
 router = APIRouter(prefix="/appreciations", tags=["Appreciations"])
 
 # ---- CONFIG ----
 MAX_PER_CREATOR_PER_MONTH = 10
 
-# ---- AUTH (replace with your real dependency if you already have one) ----
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> models.User:
-    """
-    Placeholder for demo:
-    - Treat the token as a username and load that user.
-    Replace with your real JWT decoder + user lookup.
-    """
-    # >>> REPLACE THIS with your actual token decoding <<<
-    user = db.query(models.User).filter(models.User.username == token).first()
-    if not user:
-        # If you’re using real JWTs, map sub->user here
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return user
-
 # ---- helpers ----
-def sha256_hex(s: str) -> str:
-    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+def sha256_hex(ip: str) -> str:
+    return hashlib.sha256(ip.encode("utf-8")).hexdigest()
 
-# ---- endpoint ----
+# ---- endpoints ----
 @router.post(
     "",
     summary="Give an appreciation token to a video",
@@ -62,62 +44,62 @@ def appreciate(
     req: Request,
     body: AppreciateIn,
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user),  # swap for your real dependency
+    user: User = Depends(get_current_user),  # swap for your real dependency
 ):
-    # 1) load video + creator
-    video = db.get(models.Video, body.video_id)
+    # 1) Load video + creator
+    video = db.get(Video, body.video_id)
     if not video:
         raise HTTPException(status_code=404, detail="video not found")
     if not video.creator_id:
         raise HTTPException(status_code=400, detail="video missing creator_id")
 
-    # 2) find user's wallet
+    # 2) Find user's wallet
     wallet = (
-        db.query(models.TokenWallet)
-          .filter(models.TokenWallet.user_id == user.id)
+        db.query(TokenWallet)
+          .filter(TokenWallet.user_id == user.id)
           .first()
     )
     if not wallet:
         raise HTTPException(status_code=404, detail="wallet not found")
 
-    # 3) prevent duplicate appreciation (unique per wallet_id + video_id)
+    # 3) Prevent duplicate appreciation (unique per wallet_id + video_id)
     dup = (
-        db.query(models.AppreciationToken)
+        db.query(AppreciationToken)
           .filter(
-              models.AppreciationToken.wallet_id == wallet.wallet_id,
-              models.AppreciationToken.video_id == video.id,
+              AppreciationToken.wallet_id == wallet.wallet_id,
+              AppreciationToken.video_id == video.id,
           )
           .first()
     )
     if dup:
         raise HTTPException(status_code=409, detail="already appreciated")
 
-    # 4) per-creator monthly cap
+    # 4) Per-creator monthly cap (should we have a monthly cap?)
     month_count = (
-        db.query(func.count(models.AppreciationToken.token_id))
-          .join(models.Video, models.Video.id == models.AppreciationToken.video_id)
+        db.query(func.count(AppreciationToken.token_id))
+          .join(Video, Video.id == AppreciationToken.video_id)
           .filter(
-              models.AppreciationToken.wallet_id == wallet.wallet_id,
-              models.Video.creator_id == video.creator_id,
-              extract("year", models.AppreciationToken.created_at) == extract("year", func.now()),
-              extract("month", models.AppreciationToken.created_at) == extract("month", func.now()),
+              AppreciationToken.wallet_id == wallet.wallet_id,
+              Video.creator_id == video.creator_id,
+              extract("year", AppreciationToken.created_at) == extract("year", func.now()),
+              extract("month", AppreciationToken.created_at) == extract("month", func.now()),
           )
           .scalar()
     )
     if month_count >= MAX_PER_CREATOR_PER_MONTH:
         raise HTTPException(status_code=400, detail="monthly cap reached for this creator")
 
-    # 5) ensure wallet has tokens (monthly first, then bonus)
+    # 5) Ensure wallet has tokens (monthly first, then bonus)
     monthly = wallet.monthly_budget or 0
     bonus = wallet.bonus_balance or 0
     if monthly + bonus < 1:
         raise HTTPException(status_code=400, detail="insufficient tokens")
 
-    # 6) record appreciation + deduct
+    # 6) Record appreciation + deduct
     client_ip = req.headers.get("x-forwarded-for") or (req.client.host if req.client else "0.0.0.0")
     ip_hash = sha256_hex(client_ip)
 
-    apprec = models.AppreciationToken(
+    apprec = AppreciationToken(
         wallet_id=wallet.wallet_id,
         video_id=video.id,
         ip_hash=ip_hash,

@@ -1,4 +1,3 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum, UniqueConstraint, Boolean, func
 import enum
@@ -23,8 +22,8 @@ class TokenWallet(Base):
     __tablename__ = "token_wallets"
     wallet_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    monthly_budget = Column(Integer, default=100)
-    bonus_balance = Column(Integer, default=0)
+    balance = Column(Integer, default=10)
+    bonus_balance = Column(Integer, default=10) # Per month
 
     # Relationships
     user = relationship("User", back_populates="wallet")
@@ -39,6 +38,7 @@ class Video(Base):
     ai_score = Column(Float, default=0.0)
     ai_label = Column(String)
     meta_data = Column(JSON)
+    s3_key = Column(String, unique=True, nullable=False)
 
     # Relationships
     creator = relationship("User", back_populates="videos")
@@ -53,7 +53,8 @@ class AppreciationToken(Base):
     ip_hash = Column(String)
     source = Column(Enum(AppreciationSource), default=AppreciationSource.tap)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # <-- add this
-
+    used_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+    
     # Relationships
     wallet = relationship("TokenWallet", back_populates="appreciation_tokens")
     video = relationship("Video", back_populates="appreciation_tokens")

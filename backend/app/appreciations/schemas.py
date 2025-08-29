@@ -10,6 +10,7 @@ class AppreciateIn(BaseModel):
     video_id: int = Field(..., example=123, description="ID of the video to appreciate")
     source: AppreciationSourceEnum = Field(default=AppreciationSourceEnum.tap, example="tap")
     device_fingerprint: str | None = Field(default=None, example="abc123def456")
+    user_id: int
 
 class AppreciateOut(BaseModel):
     ok: bool = Field(True, example=True)

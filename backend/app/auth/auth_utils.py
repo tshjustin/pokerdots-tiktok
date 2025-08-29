@@ -1,10 +1,13 @@
 from jose import JWTError, jwt
+from fastapi import Depends, HTTPException, status
 import os, logging
 from datetime import datetime, timedelta, UTC
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from database.models import User
 from passlib.context import CryptContext
+from auth_router import oauth2_bearer
+from database.session import get_db
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -50,3 +53,28 @@ def authenticate_user(username: str, password: str, db: Session):
         logger.error(f"An error has occurred while authenticating user: {str(e)}")
         raise
 
+def get_current_user(
+    token: str = Depends(oauth2_bearer),
+    db: Session = Depends(get_db),
+) -> User:
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise JWTError("Invalid token payload")
+        
+        # Get user by username (might replace this with an imported function)
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Could not validate credentials",
+            )
+        return user
+    
+    except HTTPException as he:
+        raise he
+    
+    except Exception as e:
+        logger.error(f"An error has occurred: {str(e)}")
