@@ -9,7 +9,21 @@ import logging
 from database.db import create_database, create_tables
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI()
+
+# ---------- Swagger / OpenAPI polish ----------
+tags_metadata = [
+    {"name": "Health", "description": "Service health checks."},
+    {"name": "Auth", "description": "Signup, login, and token endpoints (OAuth2 Password flow)."},
+]
+
+app = FastAPI(
+    title="PokerDots API",
+    version="1.0.0",
+    description="Backend for PokerDots (auth, health, and more).",
+    docs_url="/swagger",
+    redoc_url="/redoc",
+    openapi_tags=tags_metadata,
+)
 
 origins = [
     "*"
@@ -27,10 +41,13 @@ app.add_middleware(
 # Only import routes after "app" has been initialised
 from .routes.health import router as health_router
 from .auth.auth_router import router as auth_router
-
+from .routes.appreciations import router as appreciations_router
 # Include routers
 app.include_router(health_router)
 app.include_router(auth_router)
+
+
+app.include_router(appreciations_router)
 
 # Application startup event
 @app.on_event("startup")

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum, UniqueConstraint, Boolean, func
 import enum
 from .session import Base
 
@@ -43,6 +44,7 @@ class Video(Base):
     creator = relationship("User", back_populates="videos")
     appreciation_tokens = relationship("AppreciationToken", back_populates="video", passive_deletes=True)
 
+
 class AppreciationToken(Base):
     __tablename__ = "appreciation_tokens"
     token_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -50,9 +52,22 @@ class AppreciationToken(Base):
     video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=True, index=True)
     ip_hash = Column(String)
     source = Column(Enum(AppreciationSource), default=AppreciationSource.tap)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # <-- add this
 
     # Relationships
     wallet = relationship("TokenWallet", back_populates="appreciation_tokens")
     video = relationship("Video", back_populates="appreciation_tokens")
 
     __table_args__ = (UniqueConstraint("wallet_id", "video_id", name="uniq_user_video_appreciation"),)
+
+
+# class Comment(Base):
+#     __tablename__ = "comments"
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+#     stream_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("streams.id"), nullable=False)
+#     viewer_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
+#     text: Mapped[str] = mapped_column(Text, nullable=False)
+#     flags: Mapped[dict] = mapped_column(JSON, server_default=text("'{}'::json"), nullable=False)
+#     created_at: Mapped[str] = mapped_column(TIMESTAMP(timezone=True), server_default=text("now()"))
+
+

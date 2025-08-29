@@ -1,87 +1,111 @@
+# backend/auth/auth_router.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 import logging
+
 from database.models import User
 from database.session import get_db
 from .auth_utils import authenticate_user, create_access_token
 from .schemas import CreateUserRequest, Token
 
-# Set up logging
+# ---------- logging ----------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Set up router
-router = APIRouter(prefix="/auth", tags=["auth"])
+# ---------- router & security ----------
+router = APIRouter(prefix="/auth", tags=["Auth"])
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+# IMPORTANT: make this the absolute path to match your route
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+# Optional: small response models for nicer Swagger
+from pydantic import BaseModel, Field
+
+class Message(BaseModel):
+    message: str = Field(..., example="User created")
+
+class ErrorResponse(BaseModel):
+    detail: str = Field(..., example="Username is already taken")
+
+# ---------- endpoints ----------
+
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new user",
+    description="Registers a new user with **username**, **email**, and **password**.",
+    response_model=Message,
+    responses={
+        201: {"description": "User created", "model": Message},
+        400: {"description": "Validation/constraint error", "model": ErrorResponse},
+        409: {"description": "Duplicate username/email", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
+    },
+)
 async def create_user(
-    request: CreateUserRequest, 
-    db: Session = Depends(get_db)):
+    request: CreateUserRequest,
+    db: Session = Depends(get_db),
+):
     try:
-        # Create new user obj
         new_user = User(
             username=request.username,
             email=request.email,
             password_hash=bcrypt_context.hash(request.password),
         )
-        # Commit to DB
         db.add(new_user)
         db.commit()
+        # Return a concrete body so Swagger shows it
+        return {"message": "User created"}
 
     except IntegrityError as ie:
         db.rollback()
-        error_info = str(ie.orig).lower()
+        error_info = str(getattr(ie, "orig", ie)).lower()
         if "email" in error_info:
             logger.error("Email address is already registered!")
-            raise HTTPException(
-                status_code=400,
-                detail="Email address is already registered"
-            )
-        elif "username" in error_info:
+            # 409 is the conventional status for duplicates
+            raise HTTPException(status_code=409, detail="Email address is already registered")
+        if "username" in error_info:
             logger.error("Username is already registered!")
-            raise HTTPException(
-                status_code=400,
-                detail="Username is already taken"
-            )
+            raise HTTPException(status_code=409, detail="Username is already taken")
+        raise HTTPException(status_code=400, detail="Integrity constraint violated")
 
     except Exception as e:
         db.rollback()
-        logger.error(f"An error has occurred while creating new user account: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"An error has occurred while creating new user account: {str(e)}")
-    
-@router.post("/token", response_model=Token)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
-    db: Session = Depends(get_db)):
-        try:
-            user = authenticate_user(form_data.username, form_data.password, db)
-            # Handle auth fail
-            if not user:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Could not validate user.",
-                )
-            
-            # Create user token
-            token = create_access_token(user)
+        logger.error(f"Error creating user: {e}")
+        raise HTTPException(status_code=500, detail=f"Error creating user: {e}")
 
-            return {"access_token": token, "token_type": "bearer"}
-        
-        except HTTPException as he:
-            # Raise HTTPException as it is
-            raise he
-        
-        except Exception as e:
-            logger.error(f"An error has occurred: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"An error has occurred: {str(e)}",
-            )
+@router.post(
+    "/token",
+    summary="Get access token (OAuth2 Password)",
+    description=(
+        "Exchange **username**/**password** for a JWT access token.\n\n"
+        "Then click **Authorize** (top-right in Swagger) and enter `Bearer <token>` "
+        "to call protected endpoints."
+    ),
+    response_model=Token,
+    responses={
+        200: {"description": "Token issued", "model": Token},
+        401: {"description": "Invalid credentials", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
+    },
+)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    try:
+        user = authenticate_user(form_data.username, form_data.password, db)
+        if not user:
+            raise HTTPException(status_code=401, detail="Could not validate user.")
+        token = create_access_token(user)
+        return {"access_token": token, "token_type": "bearer"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Auth error: {e}")
+        raise HTTPException(status_code=500, detail=f"An error has occurred: {e}")
