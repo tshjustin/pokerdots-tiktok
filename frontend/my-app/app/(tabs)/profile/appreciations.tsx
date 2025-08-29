@@ -1,3 +1,4 @@
+// app/(tabs)/profile/appreciation.tsx
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
@@ -7,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from 'react-native';
 import TokenAlertBanner from '../../../src/components/TokenAlertBanner';
 import PromoCard from '../../../src/components/PromoCard';
@@ -15,7 +17,8 @@ import { fetchAppreciations, AppreciationItem } from '../../../src/services/appr
 import { fetchRemainingTokens, fetchTokenOffers } from '../../../src/services/tokenService';
 
 const numColumns = 3;
-const size = Dimensions.get('window').width / numColumns;
+const tileW = Dimensions.get('window').width / numColumns;
+const tileH = tileW * 1.5; // your current 2:3-ish aspect
 
 export default function ProfileAppreciationTab() {
   const [data, setData] = useState<AppreciationItem[] | null>(null);
@@ -63,7 +66,17 @@ export default function ProfileAppreciationTab() {
         numColumns={numColumns}
         ListHeaderComponent={header}
         renderItem={({ item }) => (
-          <Image source={{ uri: item.imageUrl }} style={{ width: size, height: size }} />
+          <Pressable
+            onPress={() => Alert.alert('Image pressed', `id: ${item.id}`)}
+            // onLongPress={() => ...}
+            style={({ pressed }) => [
+              s.tile,
+              pressed && s.tilePressed,
+              { width: tileW, height: tileH },
+            ]}
+          >
+            <Image source={{ uri: item.imageUrl }} style={s.image} />
+          </Pressable>
         )}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.listContent}
@@ -78,11 +91,9 @@ export default function ProfileAppreciationTab() {
           if (offer.kind === 'ad') {
             setModalVisible(false);
             Alert.alert('Watch Ad', `Reward: ${offer.tokens} token${offer.tokens > 1 ? 's' : ''}`);
-            // TODO: integrate ads -> grant tokens, then refetch remaining
           } else {
             setModalVisible(false);
             Alert.alert('Checkout', `Purchase ${offer.tokens} tokens for $${offer.priceUsd.toFixed(2)}`);
-            // TODO: navigate to purchase flow; on success, refetch remaining
           }
         }}
       />
@@ -95,4 +106,15 @@ const s = StyleSheet.create({
   spacer: { height: 8 },
   divider: { height: 1, backgroundColor: '#f3f3f3' },
   gridTopSpacer: { height: 8 },
+
+  tile: {
+    overflow: 'hidden',
+  },
+  tilePressed: {
+    opacity: 0.8, // subtle feedback on press
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
 });

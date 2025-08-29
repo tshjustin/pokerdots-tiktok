@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
 type Props = {
   remaining: number;            // e.g. 46
@@ -9,7 +9,8 @@ type Props = {
 export default function TokenAlertBanner({ remaining, period = 'this month', tint = '#ff3b6b' }: Props) {
   return (
     <View style={s.container}>
-      <View style={[s.dot, { backgroundColor: tint }]} />
+      {/* <View style={[s.dot, { backgroundColor: tint }]} /> */}
+      <Image source={require('../../assets/icons/redchip.png')} style={s.icon} resizeMode="contain" />
       <Text style={s.text}>
         You have <Text style={s.bold}>{remaining}</Text> tokens left to give out {period}
       </Text>
@@ -21,6 +22,7 @@ const s = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -35,4 +37,5 @@ const s = StyleSheet.create({
   },
   text: { color: '#333', fontSize: 14 },
   bold: { fontWeight: '700' },
+  icon: { width: 20, height: 20 },
 });
