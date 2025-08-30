@@ -16,7 +16,7 @@ s3_client = boto3.client(
     's3',
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name='AWS_REGION'
+    region_name=AWS_REGION
 )
 
 async def upload_video_to_s3(file_content: bytes, filename, user_id):
@@ -37,7 +37,10 @@ async def upload_video_to_s3(file_content: bytes, filename, user_id):
             ContentType=f"video/{file_extension}"
         )
         
-        return s3_key
+        # unqiue S3 url each correpsonding to a 
+        s3_url = f"https://{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+
+        return s3_key, s3_url
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"s3 upload failed: {str(e)}")

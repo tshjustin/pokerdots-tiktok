@@ -1,5 +1,6 @@
 # backend/routes/appreciations.py
 import hashlib
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -8,8 +9,12 @@ from sqlalchemy.orm import Session
 
 from database.session import get_db
 from database.models import User, Video, TokenWallet, AppreciationToken
-from ..appreciations.schemas import AppreciateIn, AppreciateOut, ErrorResponse
-from ..auth.auth_utils import get_current_user  
+from .schemas import AppreciateIn, AppreciateOut, ErrorResponse, TopUpResponse
+from ..auth.auth_utils import get_current_user
+
+# Set up logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/appreciations", tags=["Appreciations"])
 
@@ -40,11 +45,11 @@ def sha256_hex(ip: str) -> str:
         409: {"description": "Already appreciated", "model": ErrorResponse},
     },
 )
-def appreciate(
+async def appreciate(
     req: Request,
     body: AppreciateIn,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),  # swap for your real dependency
+    user: User = Depends(get_current_user),
 ):
     # 1) Load video + creator
     video = db.get(Video, body.video_id)
@@ -121,3 +126,35 @@ def appreciate(
         creator_monthly_count=month_count + 1,
         message="Appreciation recorded",
     )
+
+@router.post("/topup")
+async def topup(
+    id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Find users wallet
+    wallet = db.query(TokenWallet).filter(TokenWallet.user_id == id).first()
+    if not wallet:
+        raise HTTPException(
+            status_code=404,
+            detail="wallet not found"
+        )
+    try:
+        # Topup balance
+        wallet.bonus_balance += 1
+
+        db.commit()
+        db.refresh()
+
+        return TopUpResponse(
+            balance = wallet.bonus_balance + wallet.monthly_budget,
+            message = "Wallet topped up!"
+        )
+    
+    except Exception as e:
+        db.rollback()
+        logger.error(f"An error has occurred while topping up wallet: {str(e)}")
+        return ErrorResponse(
+            message=f"An error has occurred while topping up wallet: {str(e)}"
+        )

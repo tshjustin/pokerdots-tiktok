@@ -44,7 +44,7 @@ app.add_middleware(
 # Only import routes after "app" has been initialised
 from .routes.health import router as health_router
 from .auth.auth_router import router as auth_router
-from .routes.appreciations import router as appreciations_router
+from .appreciations.appreciations_router import router as appreciations_router
 from .videos.video_routers import router as video_router
 # from database import events
 
