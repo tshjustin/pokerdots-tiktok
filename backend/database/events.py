@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 #         new_tokens = [
 #             AppreciationToken(
 #                 wallet_id=target.wallet_id,
-#                 ip_hash="ip", # TODO: figure out how to get ip_hash
+#                 ip_hash="ip",
 #                 source="tap",
 #             )
 #             for _ in range(10)
