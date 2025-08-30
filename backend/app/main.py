@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 # from schemas import SignUp, Login, AppreciateIn, AdStartIn, AdCompleteIn
 # from security import create_access_token, get_current_user
 # from utils import ip_hash, rate_limit_ok
+
+
+
 import logging
 from database.db import create_database, create_tables
 logging.basicConfig(level=logging.INFO)
@@ -42,12 +45,14 @@ app.add_middleware(
 from .routes.health import router as health_router
 from .auth.auth_router import router as auth_router
 from .routes.appreciations import router as appreciations_router
+from .videos.video_routers import router as video_router
 # from database import events
 
 # Include routers
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(appreciations_router)
+app.include_router(video_router)
 
 # Application startup event
 @app.on_event("startup")
