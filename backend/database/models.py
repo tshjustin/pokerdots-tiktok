@@ -18,6 +18,7 @@ class User(Base):
     wallet = relationship("TokenWallet", back_populates="user", uselist=False, passive_deletes=True)
     videos = relationship("Video", back_populates="creator", passive_deletes=True)
     appreciation_tokens = relationship("AppreciationToken", back_populates="user", passive_deletes=True)
+    ad_sessions = relationship("AdSession", back_populates="user", passive_deletes=True)
 
 class TokenWallet(Base):
     __tablename__ = "token_wallets"
@@ -50,8 +51,6 @@ class Video(Base):
     creator = relationship("User", back_populates="videos")
     appreciation_tokens = relationship("AppreciationToken", back_populates="video", passive_deletes=True)
 
-
-
 class AppreciationToken(Base):
     __tablename__ = "appreciation_tokens"
     token_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -66,6 +65,29 @@ class AppreciationToken(Base):
     video = relationship("Video", back_populates="appreciation_tokens")
 
     __table_args__ = (UniqueConstraint("user_id", "video_id", name="uniq_user_video_appreciation"),)
+
+class Ad(Base):
+    __tablename__ = "ads"
+    ad_id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String, unique=True, nullable=False)
+    duration = Column(Integer, nullable=False)
+
+    # Relationships
+    ad_sessions = relationship("AdSession", back_populates="ad", passive_deletes=True)
+
+class AdSession(Base):
+    __tablename__ = "ad_session"
+    session_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    ad_id = Column(Integer, ForeignKey("ads.ad_id", ondelete="CASCADE"), index=True)
+    started_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    completed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+    is_completed = Column(Boolean, default=False)
+    session_token = Column(String, unique=True, nullable=False)
+
+    # Relationships
+    ad = relationship("Ad", back_populates="ad_sessions")
+    user = relationship("User", back_populates="ad_sessions")
 
 
 # class Comment(Base):
