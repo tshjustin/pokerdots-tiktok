@@ -13,8 +13,3 @@ COPY . /app
 EXPOSE 4001
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4001"]
-
-
-# video-upload-user
-# https://373633008891.signin.aws.amazon.com/console
-# Iv3LNC7=
