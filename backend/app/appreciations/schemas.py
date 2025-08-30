@@ -20,3 +20,7 @@ class AppreciateOut(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str = Field(..., example="insufficient tokens")
+
+class TopUpResponse(BaseModel):
+    balance: int
+    message: str
