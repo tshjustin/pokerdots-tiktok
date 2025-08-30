@@ -100,7 +100,7 @@ def appreciate(
     ip_hash = sha256_hex(client_ip)
 
     apprec = AppreciationToken(
-        wallet_id=wallet.wallet_id,
+        user_id=user.id,
         video_id=video.id,
         ip_hash=ip_hash,
         source=body.source.value if hasattr(body.source, "value") else body.source,

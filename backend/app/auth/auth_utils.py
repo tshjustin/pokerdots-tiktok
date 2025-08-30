@@ -1,12 +1,12 @@
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 import os, logging
 from datetime import datetime, timedelta, UTC
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from database.models import User
 from passlib.context import CryptContext
-from auth_router import oauth2_bearer
 from database.session import get_db
 
 # Set up logging
@@ -22,6 +22,7 @@ ALGORITHM = os.environ["ALGORITHM"]
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 def create_access_token(user: User):
     """

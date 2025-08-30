@@ -17,17 +17,17 @@ class User(Base):
     # Relationships
     wallet = relationship("TokenWallet", back_populates="user", uselist=False, passive_deletes=True)
     videos = relationship("Video", back_populates="creator", passive_deletes=True)
+    appreciation_tokens = relationship("AppreciationToken", back_populates="user", passive_deletes=True)
 
 class TokenWallet(Base):
     __tablename__ = "token_wallets"
     wallet_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    balance = Column(Integer, default=10)
+    monthly_budget = Column(Integer, default=10)
     bonus_balance = Column(Integer, default=10) # Per month
 
     # Relationships
     user = relationship("User", back_populates="wallet")
-    appreciation_tokens = relationship("AppreciationToken", back_populates="wallet", passive_deletes=True)
 
 class Video(Base):
     __tablename__ = "videos"
@@ -48,18 +48,17 @@ class Video(Base):
 class AppreciationToken(Base):
     __tablename__ = "appreciation_tokens"
     token_id = Column(Integer, primary_key=True, autoincrement=True)
-    wallet_id = Column(Integer, ForeignKey("token_wallets.wallet_id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=True, index=True)
     ip_hash = Column(String)
     source = Column(Enum(AppreciationSource), default=AppreciationSource.tap)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # <-- add this
-    used_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+    used_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # <-- add this
     
     # Relationships
-    wallet = relationship("TokenWallet", back_populates="appreciation_tokens")
+    user = relationship("User", back_populates="appreciation_tokens")
     video = relationship("Video", back_populates="appreciation_tokens")
 
-    __table_args__ = (UniqueConstraint("wallet_id", "video_id", name="uniq_user_video_appreciation"),)
+    __table_args__ = (UniqueConstraint("user_id", "video_id", name="uniq_user_video_appreciation"),)
 
 
 # class Comment(Base):
