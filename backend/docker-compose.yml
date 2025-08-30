@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    networks:
+      - gateway
+    ports: 
+      - "5432:5432"
+    # volumes:
+    #   - dbdata:/var/lib/postgresql/data
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -U app -d fairwave"]
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 30
+
+  backend:
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    container_name: backend
+    volumes:
+      - .:/app
+    networks:
+      - gateway
+    ports: 
+      - "4001:4001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    env_file: .env
+    depends_on:
+      - postgres
+    #     condition: service_healthy
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4001", "--reload"]
+
+networks:
+  gateway: {}
+
+volumes:
+    dbdata:
