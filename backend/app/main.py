@@ -46,6 +46,7 @@ from .routes.health import router as health_router
 from .auth.auth_router import router as auth_router
 from .appreciations.appreciations_router import router as appreciations_router
 from .videos.video_routers import router as video_router
+from .ads.ads_router import router as ads_router
 # from database import events
 
 # Include routers
@@ -53,6 +54,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(appreciations_router)
 app.include_router(video_router)
+app.include_router(ads_router)
 
 # Application startup event
 @app.on_event("startup")
@@ -73,32 +75,6 @@ def shutdown_event():
 # def balance(user=Depends(get_current_user), db: Session = Depends(get_db)):
 #     # return monthly_budget + bonus_balance
 #     ...
-
-# @app.post("/appreciations")
-# def appreciate(req: Request, inp: AppreciateIn,
-#                user=Depends(get_current_user), db: Session = Depends(get_db)):
-#     client_ip = req.headers.get("x-forwarded-for", req.client.host)
-#     if not rate_limit_ok(user.id, client_ip): raise HTTPException(429)
-#     v = db.get(Video, inp.video_id)
-#     if not v: raise HTTPException(404, "video not found")
-#     # watch-time check (trusted from client or verified from player logs)
-#     if inp.watched_seconds < min(v.duration_s*0.3, 15):
-#         raise HTTPException(400, "insufficient watch time")
-#     # ensure wallet has tokens
-#     wallet = db.query(TokenWallet).filter_by(user_id=user.id).first()
-#     if wallet.monthly_budget + wallet.bonus_balance < 1:
-#         raise HTTPException(400, "insufficient tokens")
-#     # one per user/video
-#     exists = db.query(Appreciation).filter_by(user_id=user.id, video_id=v.id).first()
-#     if exists: raise HTTPException(409, "already appreciated")
-#     # record + deduct
-#     apprec = Appreciation(user_id=user.id, video_id=v.id,
-#                           ip_hash=ip_hash(client_ip), source="tap")
-#     db.add(apprec)
-#     if wallet.monthly_budget > 0: wallet.monthly_budget -= 1
-#     else: wallet.bonus_balance -= 1
-#     db.commit()
-#     return {"ok": True}
 
 # @app.post("/ads/start")
 # def ad_start(inp: AdStartIn, user=Depends(get_current_user), db: Session = Depends(get_db)):

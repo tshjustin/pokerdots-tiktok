@@ -71,7 +71,7 @@ async def appreciate(
     dup = (
         db.query(AppreciationToken)
           .filter(
-              AppreciationToken.wallet_id == wallet.wallet_id,
+              AppreciationToken.user_id == body.user_id,
               AppreciationToken.video_id == video.id,
           )
           .first()
@@ -84,10 +84,10 @@ async def appreciate(
         db.query(func.count(AppreciationToken.token_id))
           .join(Video, Video.id == AppreciationToken.video_id)
           .filter(
-              AppreciationToken.wallet_id == wallet.wallet_id,
+              AppreciationToken.user_id == body.user_id,
               Video.creator_id == video.creator_id,
-              extract("year", AppreciationToken.created_at) == extract("year", func.now()),
-              extract("month", AppreciationToken.created_at) == extract("month", func.now()),
+              extract("year", AppreciationToken.used_at) == extract("year", func.now()),
+              extract("month", AppreciationToken.used_at) == extract("month", func.now()),
           )
           .scalar()
     )
