@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-
 from sqlalchemy.orm import Session
 from database.session import get_db
 from database.models import Video, User
-
-from ..auth.auth_utils import get_current_user # TODO: get the current user 
-
+from ..auth.auth_utils import get_current_user
 from ..storage.s3_client import upload_video_to_s3, generate_presigned_url
 from .schemas import VideoUploadResponse, VideoResponse
 
@@ -16,36 +13,37 @@ async def upload_video(
     title: str = Form(...),
     description: str = Form(None),
     file: UploadFile = File(...),
-    user: User = Depends(get_current_user),  # AUTH REQUIRED
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # check for .mp4 
-    if not file.filename.lower().endswith(('.mp4')):
+    # validate file type
+    if not file.filename.lower().endswith('.mp4'):
         raise HTTPException(400, "only .mp4 supported")
     
     file_content = await file.read()
     
     try:
-        s3_key = await upload_video_to_s3(file_content, file.filename, user.id)
+        # updated to get s3 url 
+        s3_key, s3_url = await upload_video_to_s3(file_content, file.filename, user.id)
         
+        # Create video record with both s3_key and s3_url
         video = Video(
             creator_id=user.id,
             title=title,
             description=description,
             s3_key=s3_key,
+            s3_url=s3_url,
             file_size=len(file_content),
             upload_status="completed"
         )
         
-        # add meta data to database 
         db.add(video)
         db.commit()
         db.refresh(video)
         
         return VideoUploadResponse(
             video_id=video.id,
-            title=video.title,
-            s3_key=s3_key
+            title=video.title
         )
         
     except Exception as e:
@@ -58,16 +56,27 @@ def get_video(video_id: int, db: Session = Depends(get_db)):
     if not video:
         raise HTTPException(404, "video not found")
     
-    # url for video access 
-    video_url = generate_presigned_url(video.s3_key)
-    
     return VideoResponse(
         id=video.id,
         title=video.title,
         description=video.description,
+        creator_id=video.creator_id,
         creator_username=video.creator.username,
-        video_url=video_url,  # fix this if needed 
         duration_s=video.duration_s,
         view_count=video.view_count,
+        ai_score=video.ai_score,
+        ai_label=video.ai_label,
         created_at=video.created_at
     )
+
+@router.get("/{video_id}/url")
+def get_video_url(video_id: int, db: Session = Depends(get_db)):
+    video = db.query(Video).filter(Video.id == video_id).first()
+    if not video:
+        raise HTTPException(404, "video not found")
+    
+    return {
+        "video_id": video.id,
+        "s3_url": video.s3_url, 
+        "presigned_url": generate_presigned_url(video.s3_key)  # temporary URL if needed
+    }

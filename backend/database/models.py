@@ -34,15 +34,22 @@ class Video(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     creator_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title = Column(String, unique=True, nullable=False, index=True)
+    description = Column(String)
     duration_s = Column(Integer)
-    ai_score = Column(Float, default=0.0)
-    ai_label = Column(String)
+    view_count = Column(Integer, default=0)
+    ai_score = Column(Float, default=0.0) # added AI scores 
+    ai_label = Column(String) 
     meta_data = Column(JSON)
     s3_key = Column(String, unique=True, nullable=False)
+    s3_url = Column(String, nullable=False)  # added S3 url 
+    file_size = Column(Integer)
+    upload_status = Column(String, default="pending")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     creator = relationship("User", back_populates="videos")
     appreciation_tokens = relationship("AppreciationToken", back_populates="video", passive_deletes=True)
+
 
 
 class AppreciationToken(Base):
