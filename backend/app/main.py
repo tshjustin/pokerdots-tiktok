@@ -42,13 +42,11 @@ app.add_middleware(
 from .routes.health import router as health_router
 from .auth.auth_router import router as auth_router
 from .routes.appreciations import router as appreciations_router
-from database import events
+# from database import events
 
 # Include routers
 app.include_router(health_router)
 app.include_router(auth_router)
-
-
 app.include_router(appreciations_router)
 
 # Application startup event
