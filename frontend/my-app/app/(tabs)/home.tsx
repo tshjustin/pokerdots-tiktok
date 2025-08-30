@@ -6,10 +6,10 @@ import VideoPlayer, { VideoPlayerHandle } from "../../src/components/videoPlayer
 
 const DATA = [
   // use loud, known-good samples
-  { id: "1", uri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
-  { id: "2", uri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
-  { id: "3", uri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" },
-  { id: "4", uri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" },
+  { id: "1", uri: "https://your-videos-demo.s3.ap-southeast-2.amazonaws.com/IMG_3444.MP4" },
+  { id: "2", uri: "https://your-videos-demo.s3.ap-southeast-2.amazonaws.com/user1/IMG_3445.MP4" },
+  { id: "3", uri: "https://your-videos-demo.s3.ap-southeast-2.amazonaws.com/video_2025-08-30_15-00-25.mp4" },
+  { id: "4", uri: "https://your-videos-demo.s3.ap-southeast-2.amazonaws.com/IMG_3445.MP4" },
 ];
 
 export default function FeedScreen() {
@@ -50,14 +50,14 @@ export default function FeedScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: { id: string; uri: string }; index: number }) => (
-      <View style={[styles.page, { height: PAGE_HEIGHT, width }]}>
+      <View style={[styles.page, styles.center, { height: PAGE_HEIGHT, width }]}>
         <VideoPlayer
           ref={makeRef(item.id)}
           uri={item.uri}
           paused={index !== activeIndex}
-          muted={false}
-          fit="cover"
-          position={{ dx: 0, dy: 0 }}
+          fit="cover"              // fill + crop from center
+          position="center"        // optional (default is "center")
+          style={StyleSheet.absoluteFill} // make the container fill the page
         />
       </View>
     ),
@@ -95,4 +95,5 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
   page: { backgroundColor: "black" },
+  center: { justifyContent: "center", alignItems: "center", overflow: "hidden" },
 });

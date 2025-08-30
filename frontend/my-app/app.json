@@ -8,21 +8,38 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow to record videos.",
+        "NSMicrophoneUsageDescription": "Allow to record audio with your videos.",
+        "NSPhotoLibraryUsageDescription": "Allow to pick videos from your library.",
+        "NSPhotoLibraryAddUsageDescription": "Allow to save exported videos to your library."
+      }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
+
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       [
@@ -37,8 +54,13 @@
       "expo-video",
       "expo-audio"
     ],
+
     "experiments": {
       "typedRoutes": true
+    },
+
+    "extra": {
+      "EXPO_PUBLIC_API_BASE": "http://localhost:4000"
     }
   }
 }
