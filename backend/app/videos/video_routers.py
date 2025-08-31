@@ -4,6 +4,9 @@ from database.session import get_db
 from database.models import Video, User
 from ..auth.auth_utils import get_current_user
 from ..storage.s3_client import upload_video_to_s3, generate_presigned_url
+
+from ..services.video_inference import trigger_analysis
+
 from .schemas import VideoUploadResponse, VideoResponse
 
 router = APIRouter(prefix="/videos", tags=["Videos"])
@@ -41,6 +44,8 @@ async def upload_video(
         db.commit()
         db.refresh(video)
         
+        await trigger_analysis(video.id)
+
         return VideoUploadResponse(
             video_id=video.id,
             title=video.title
@@ -79,4 +84,18 @@ def get_video_url(video_id: int, db: Session = Depends(get_db)):
         "video_id": video.id,
         "s3_url": video.s3_url, 
         "presigned_url": generate_presigned_url(video.s3_key)  # temporary URL if needed
+    }
+
+@router.get("/{video_id}/ai-status")
+def get_ai_status(video_id: int, db: Session = Depends(get_db)):
+    video = db.get(Video, video_id)
+    if not video:
+        raise HTTPException(404, "vid not found")
+    
+    return {
+        "video_id": video.id,
+        "ai_status": video.ai_status,
+        "ai_score": video.ai_score,
+        "ai_label": video.ai_label,
+        "genuinity_score": video.genuinity_score
     }
