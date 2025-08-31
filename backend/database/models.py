@@ -40,6 +40,10 @@ class Video(Base):
     description = Column(String)
     duration_s = Column(Integer)
     view_count = Column(Integer, default=0)
+    
+    ai_status = Column(String, default="pending")  # pending, processing, completed, failed
+    genuinity_score = Column(Integer) 
+
     ai_score = Column(Float, default=0.0) # added AI scores 
     ai_label = Column(String) 
     meta_data = Column(JSON)
